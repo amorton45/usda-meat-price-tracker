@@ -1,0 +1,23 @@
+name: Daily USDA scrape
+on:
+  workflow_dispatch:          # run button
+  push: { branches: [main] }  # run on any edit
+  schedule:                   # 07:15 ET daily
+    - cron:  '15 11 * * *'
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install pandas requests
+      - run: python scraper.py
+        env: { USDA_API_KEY: ${{ secrets.USDA_API_KEY }} }
+      - run: |
+          git config user.name "price-bot"
+          git config user.email "bot@example.com"
+          git add data || true
+          git commit -m "Auto-update $(date -u +'%F')" || echo "no changes"
+          git push
